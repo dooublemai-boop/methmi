@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>企业官网招聘雷达 (全自动聚合版)</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.4.4/lz-string.min.js"></script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); }
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #3b82f6; border-radius: 50%; width: 20px; height: 20px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        select { background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e"); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; padding-right: 2.5rem; -webkit-appearance: none; -moz-appearance: none; appearance: none; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen">
+
+    <!-- 顶部导航 -->
+    <header class="bg-white shadow-sm sticky top-0 z-20">
+        <div class="max-w-[1400px] mx-auto px-4 py-3 sm:px-6 lg:px-8 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <i data-lucide="radar" class="text-blue-600 w-7 h-7"></i>
+                <h1 class="text-xl font-bold text-slate-900 tracking-tight flex items-center">
+                    企招雷达 
+                    <span class="text-[10px] font-bold bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded ml-2">全自动聚合版</span>
+                </h1>
+            </div>
+            
+            <div class="flex items-center space-x-2 sm:space-x-3">
+                <button onclick="toggleSettings()" class="text-xs px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md font-medium transition-colors flex items-center">
+                    <i data-lucide="settings" class="w-3 h-3 mr-1"></i> AI 引擎设置
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-[1400px] mx-auto px-4 py-6 sm:px-6 lg:px-8 relative">
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+            
+            <!-- 左侧：自动搜索中枢 -->
+            <div class="xl:col-span-4 space-y-6">
+                <!-- 全自动检索引擎 -->
+                <div class="glass-panel rounded-2xl shadow-lg border border-blue-200 p-6 relative overflow-hidden">
+                    <div class="absolute top-0 right-0 bg-blue-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg">智能聚合</div>
+                    
+                    <div class="flex items-center space-x-3 mb-2">
+                        <i data-lucide="bot" class="w-6 h-6 text-blue-600"></i>
+                        <h2 class="text-lg font-bold text-slate-800">全网岗位智能捕获</h2>
+                    </div>
+                    <p class="text-xs text-slate-500 mb-5">无需离开网页。输入条件，系统自动去全网抓取并提取匹配的岗位进入右侧看板。</p>
+
+                    <form class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-700 mb-1">目标岗位名称 (必填)</label>
+                            <input type="text" id="jobTitle" placeholder="如：前端开发 / AI产品经理" class="w-full text-sm px-3 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all font-medium">
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">期望工作地点</label>
+                                <input type="text" id="searchLocation" placeholder="如：上海 / 远程" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">期望公司性质</label>
+                                <select id="searchCompanyType" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-lg bg-white outline-none">
+                                    <option value="">不限</option>
+                                    <option value="外资">外资/外企</option>
+                                    <option value="合资">中外合资</option>
+                                    <option value="国企">国企/央企</option>
+                                    <option value="民企">民企/大厂</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 border-t border-slate-100 mt-5">
+                            <button id="autoSearchBtn" type="button" onclick="startAutoSearchPipeline()" class="w-full flex items-center justify-center px-4 py-3.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-bold transition-all shadow-md hover:shadow-lg transform active:scale-95">
+                                <i data-lucide="zap" class="w-5 h-5 mr-2"></i>
+                                <span>🚀 启动全网搜寻并 AI 提取</span>
+                            </button>
+                        </div>
+                        
+                        <!-- 进度显示区域 -->
+                        <div id="progressArea" class="hidden mt-4 p-4 bg-slate-50 rounded-lg border border-slate-100">
+                            <div class="flex items-center text-sm text-slate-700 mb-2 font-medium">
+                                <div class="loader mr-3 w-4 h-4 border-2 border-blue-500 border-t-transparent"></div>
+                                <span id="progressText">正在准备...</span>
+                            </div>
+                            <!-- 进度条 -->
+                            <div class="w-full bg-slate-200 rounded-full h-1.5">
+                                <div id="progressBar" class="bg-blue-600 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- 手动解析模式 (备用) -->
+                <div class="glass-panel rounded-2xl shadow-sm border border-slate-200 p-5">
+                    <details class="group">
+                        <summary class="flex items-center justify-between cursor-pointer font-medium text-sm text-slate-700 list-none">
+                            <span class="flex items-center"><i data-lucide="link" class="w-4 h-4 mr-2 text-slate-400"></i> 特定链接/文本单点解析 (备用)</span>
+                            <span class="transition group-open:rotate-180"><i data-lucide="chevron-down" class="w-4 h-4"></i></span>
+                        </summary>
+                        <div class="pt-4 text-xs text-slate-500">
+                            <textarea id="jdInput" rows="3" placeholder="如果你有特定的官网JD链接或大段文字，粘贴在这里进行单点提取..." class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-slate-500 outline-none transition-all resize-none"></textarea>
+                            <button onclick="analyzeSingleInput()" class="mt-2 w-full flex items-center justify-center px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-lg transition-colors">
+                                解析并加入
+                            </button>
+                        </div>
+                    </details>
+                </div>
+            </div>
+
+            <!-- 右侧：数据看板 -->
+            <div class="xl:col-span-8 flex flex-col">
+                <div class="glass-panel rounded-2xl shadow-sm border border-slate-200 p-5 flex-1 flex flex-col min-h-[600px]">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
+                        <div class="flex items-center space-x-2">
+                            <i data-lucide="database" class="text-indigo-600 w-5 h-5"></i>
+                            <h2 class="text-lg font-bold">全网职位提取库</h2>
+                            <span id="jobCount" class="bg-blue-100 text-blue-800 text-xs px-2.5 py-0.5 rounded-full font-bold shadow-sm">0 个岗位</span>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button onclick="clearTable()" class="text-xs px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-md font-medium transition-colors flex items-center">
+                                <i data-lucide="trash" class="w-3 h-3 mr-1"></i> 清空
+                            </button>
+                            <button onclick="exportToCSV()" class="text-xs px-3 py-1.5 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-md font-medium transition-colors flex items-center border border-indigo-100">
+                                <i data-lucide="download" class="w-3 h-3 mr-1"></i> 导出 Excel
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 联动筛选器 -->
+                    <div class="bg-slate-50 p-3 rounded-lg border border-slate-200 mb-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div><select id="filterType" onchange="handleFilterChange()" class="w-full text-sm px-3 py-1.5 border border-slate-300 rounded-md bg-white font-medium text-slate-700"><option value="all">全部性质</option></select></div>
+                        <div><select id="filterLocation" onchange="handleFilterChange()" class="w-full text-sm px-3 py-1.5 border border-slate-300 rounded-md bg-white font-medium text-slate-700"><option value="all">全部地点</option></select></div>
+                        <div><select id="filterCompany" onchange="handleFilterChange()" class="w-full text-sm px-3 py-1.5 border border-slate-300 rounded-md bg-white font-medium text-slate-700"><option value="all">全部公司</option></select></div>
+                    </div>
+
+                    <!-- 数据表格 -->
+                    <div class="flex-1 overflow-auto rounded-lg border border-slate-200 bg-white relative">
+                        <table class="min-w-full divide-y divide-slate-200">
+                            <thead class="bg-slate-50 sticky top-0 z-10">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">公司与性质</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">岗位与地点</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider">薪资/待遇</th>
+                                    <th class="px-4 py-3 text-left text-xs font-bold text-slate-600 uppercase tracking-wider w-1/3">核心要求 (AI提炼)</th>
+                                    <th class="px-4 py-3 text-right text-xs font-bold text-slate-600 uppercase tracking-wider">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dataTableBody" class="bg-white divide-y divide-slate-200">
+                                <!-- 动态内容 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 设置面板 -->
+        <div id="settingsPanel" class="fixed inset-y-0 right-0 w-80 bg-white shadow-2xl transform translate-x-full transition-transform duration-300 z-50 flex flex-col">
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-slate-800 flex items-center"><i data-lucide="cpu" class="w-5 h-5 mr-2 text-blue-600"></i> AI 引擎配置</h3>
+                <button onclick="toggleSettings()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <div class="p-5 space-y-5 flex-1 overflow-y-auto">
+                <div class="bg-amber-50 border border-amber-200 p-3 rounded-lg text-xs text-amber-800 leading-relaxed mb-4">
+                    ⚠️ <b>全自动爬取极耗 AI 算力</b><br>
+                    必须配置 DeepSeek API Key 才能运转。新用户前往 <a href="https://platform.deepseek.com" target="_blank" class="underline font-bold">deepseek 平台</a> 注册可获取。
+                </div>
+                <div><label class="block text-sm font-bold text-slate-700 mb-1">API 接口地址</label><input type="text" id="apiBaseUrl" value="https://api.deepseek.com/v1/chat/completions" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-md outline-none"></div>
+                <div><label class="block text-sm font-bold text-slate-700 mb-1">大模型名称</label><input type="text" id="apiModel" value="deepseek-chat" class="w-full text-sm px-3 py-2 border border-slate-300 rounded-md outline-none"></div>
+                <div><label class="block text-sm font-bold text-slate-700 mb-1 text-blue-600">API 密钥 (API Key) *必填</label><input type="password" id="apiKey" placeholder="在此粘贴 sk-... 密钥" class="w-full text-sm px-3 py-2 border border-blue-300 focus:ring-2 focus:ring-blue-500 rounded-md outline-none shadow-sm"></div>
+            </div>
+            <div class="p-4 border-t border-slate-100"><button onclick="saveSettings()" class="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-bold shadow-md active:scale-95 transition-all">保存并生效</button></div>
+        </div>
+        <div id="settingsOverlay" onclick="toggleSettings()" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 hidden opacity-0 transition-opacity"></div>
+    </main>
+
+    <div id="toast" class="fixed bottom-4 right-4 transform translate-y-full opacity-0 transition-all duration-300 bg-slate-800 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center z-50 font-medium">
+        <span id="toastMsg" class="text-sm"></span>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // 核心数据
+        let jobsData = []; 
+        let currentFilters = { type: 'all', location: 'all', company: 'all' };
+        let aiConfig = { url: "https://api.deepseek.com/v1/chat/completions", model: "deepseek-chat", key: "" };
+
+        // UI 辅助
+        function showToast(message, type = "success") {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMsg').innerHTML = message;
+            toast.className = `fixed bottom-4 right-4 transform transition-all duration-300 text-white px-5 py-3.5 rounded-xl shadow-2xl flex items-center z-50 font-medium ${type === 'error' ? 'bg-red-600' : 'bg-slate-800'}`;
+            toast.classList.remove('translate-y-full', 'opacity-0');
+            setTimeout(() => toast.classList.add('translate-y-full', 'opacity-0'), 3500);
+        }
+
+        function escapeHTML(str) { return !str ? "" : String(str).replace(/[&<>'"]/g, tag => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[tag])); }
+
+        function toggleSettings() {
+            const panel = document.getElementById('settingsPanel'); const overlay = document.getElementById('settingsOverlay');
+            if (panel.classList.contains('translate-x-full')) { panel.classList.remove('translate-x-full'); overlay.classList.remove('hidden'); setTimeout(() => overlay.classList.remove('opacity-0'), 10); } 
+            else { panel.classList.add('translate-x-full'); overlay.classList.add('opacity-0'); setTimeout(() => overlay.classList.add('hidden'), 300); }
+        }
+        function saveSettings() { aiConfig.url = document.getElementById('apiBaseUrl').value.trim(); aiConfig.model = document.getElementById('apiModel').value.trim(); aiConfig.key = document.getElementById('apiKey').value.trim(); toggleSettings(); showToast("✅ AI 引擎设置已保存就绪！"); }
+
+        // ==========================================
+        // 核心革命：全网自动检索 + 批量结构化提炼
+        // ==========================================
+        async function startAutoSearchPipeline() {
+            const job = document.getElementById('jobTitle').value.trim();
+            const loc = document.getElementById('searchLocation').value.trim();
+            const type = document.getElementById('searchCompanyType').value;
+            
+            if (!job) return showToast("⚠️ 请至少输入想要寻找的【目标岗位名称】", "error");
+            if (!aiConfig.key) { toggleSettings(); return showToast("⚠️ 引擎未激活：请先配置您的 API Key", "error"); }
+
+            const btn = document.getElementById('autoSearchBtn');
+            const progressArea = document.getElementById('progressArea');
+            const progressText = document.getElementById('progressText');
+            const progressBar = document.getElementById('progressBar');
+
+            // 锁定 UI 状态
+            btn.disabled = true;
+            btn.classList.add('opacity-50', 'cursor-not-allowed');
+            progressArea.classList.remove('hidden');
+
+            try {
+                // --- 阶段 1：构建纯净的搜索语法 ---
+                updateProgress("阶段 1/3: 构建底层网络嗅探指令...", 10);
+                
+                let query = `"${job}"`; 
+                if (loc) query += ` "${loc}"`;
+                if (type === '外资') query += ` ("外资" OR "外企" OR "独资")`; 
+                else if (type === '合资') query += ` ("合资" OR "中外合资")`; 
+                else if (type === '国企') query += ` ("国企" OR "央企")`; 
+                else if (type === '民企') query += ` ("民企" OR "私企" OR "500强")`;
+                // 限定只搜企业官网特征，屏蔽各种中介
+                query += ` (inurl:careers OR inurl:jobs OR intitle:"加入我们" OR intitle:"社会招聘" OR intitle:"诚聘") -site:boss.zhipin.com -site:liepin.com -site:zhaopin.com -site:51job.com -site:lagou.com`;
+
+                // --- 阶段 2：执行免 CORS 后台搜索 ---
+                updateProgress("阶段 2/3: 隐形爬虫正在全网高速捕获网页特征...", 40);
+                
+                // 使用 Jina 的免费 Search API, 它会返回整洁的 markdown 格式搜索结果，完美避开跨域问题
+                const searchApiUrl = `https://s.jina.ai/${encodeURIComponent(query)}`;
+                const searchRes = await fetch(searchApiUrl);
+                if (!searchRes.ok) throw new Error("网络抓取受阻，可能是您目前的网络环境不稳定。");
+                
+                let searchMarkdown = await searchRes.text();
+                // 截取前 8000 字符，大概包含前 10-15 条搜索结果的摘要，防止超出 AI 上下文
+                searchMarkdown = searchMarkdown.substring(0, 8000); 
+
+                if (searchMarkdown.length < 100 || searchMarkdown.includes("No results found")) {
+                    throw new Error("全网未搜索到符合条件的官网岗位，请尝试更换关键词。");
+                }
+
+                // --- 阶段 3：大模型批量清洗提炼 ---
+                updateProgress("阶段 3/3: 捕获完成！AI 大模型正在进行批量深度清洗并结构化...", 75);
+
+                const prompt = `你是一个顶级的人力资源数据挖掘专家。
+以下是我通过搜索引擎爬取的一段网页搜索结果 Markdown（包含了多个公司的招聘信息摘要及原网址）。
+请仔细阅读，并将其中涉及到的 **所有真实招聘岗位** 提取出来。
+
+要求：
+1. 对于摘要中未明确指出的数据（比如薪资未写），请填入 "未注明"。
+2. companyType 必须且只能从以下词汇中选取一个匹配度最高的：外资、合资、国企、民企、创业公司、未知。
+3. 请严格返回一个 JSON 数组格式，绝对不要包含任何其他说明文字或 markdown 标记(如 \`\`\`json)。
+
+输出 JSON 格式示例：
+[
+  {
+    "company": "推断出的公司名称",
+    "companyType": "外资/民企等",
+    "position": "具体岗位名称",
+    "location": "工作城市",
+    "salary": "薪资范围",
+    "requirements": ["技能要求1", "技能要求2"],
+    "tags": ["福利标签1"],
+    "url": "提取出的对应官网原文网址链接"
+  },
+  ...
+]
+
+下面是搜索抓取的原始内容：
+${searchMarkdown}`;
+
+                const aiResponse = await fetch(aiConfig.url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${aiConfig.key}` },
+                    body: JSON.stringify({
+                        model: aiConfig.model,
+                        messages: [
+                            { role: "system", content: "你是一个只输出 JSON 数组的纯数据转换器。绝不输出额外废话。" },
+                            { role: "user", content: prompt }
+                        ],
+                        temperature: 0.1 
+                    })
+                });
+
+                if (!aiResponse.ok) throw new Error(`AI 引擎罢工了 (状态码: ${aiResponse.status})，请检查 API Key 余额或接口地址是否正确。`);
+
+                let resultText = (await aiResponse.json()).choices[0].message.content;
+                // 暴力去除可能存在的 markdown 标记，保证 JSON 解析安全
+                resultText = resultText.replace(/```json/g, '').replace(/```/g, '').trim();
+                
+                let extractedJobs = JSON.parse(resultText);
+                
+                if (!Array.isArray(extractedJobs)) {
+                    // 如果AI脑抽返回了单个对象，包成数组
+                    extractedJobs = [extractedJobs]; 
+                }
+
+                if (extractedJobs.length === 0) throw new Error("AI 仔细看了一遍，这段搜索结果里似乎没有真正有价值的岗位信息。");
+
+                // --- 阶段 4：数据入库渲染 ---
+                updateProgress("分析完毕！正在载入表格...", 100);
+                
+                // 给每个对象打上唯一ID，并合并到总数据库的前面
+                extractedJobs.forEach(job => {
+                    job.id = 'auto_' + Date.now().toString() + Math.random().toString(36).substr(2, 5);
+                    jobsData.unshift(job);
+                });
+
+                showToast(`🎉 奇迹达成！系统一次性为您提炼了 <b>${extractedJobs.length}</b> 个优质岗位！`);
+                updateFilterOptions();
+                renderTable();
+
+            } catch (error) {
+                console.error(error);
+                showToast(error.message || "未知错误发生", "error");
+                updateProgress("任务中断失败", 0);
+            } finally {
+                // 恢复 UI 状态
+                setTimeout(() => {
+                    progressArea.classList.add('hidden');
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                }, 2000);
+            }
+        }
+
+        function updateProgress(text, percent) {
+            document.getElementById('progressText').innerText = text;
+            document.getElementById('progressBar').style.width = percent + '%';
+        }
+
+        // --- 备用逻辑：单条解析 ---
+        async function analyzeSingleInput() {
+            let inputStr = document.getElementById('jdInput').value.trim();
+            if (!inputStr) return showToast("请粘贴网址或文本", "error"); 
+            if (!aiConfig.key) { toggleSettings(); return showToast("请配置 API Key", "error"); }
+            
+            showToast("正在单点解析中，请稍候...", "success");
+            
+            let targetText = inputStr;
+            let sourceUrl = "";
+
+            try {
+                if (inputStr.startsWith('http://') || inputStr.startsWith('https://')) {
+                    const urlMatch = inputStr.match(/(https?:\/\/[^\s]+)/);
+                    if (urlMatch) {
+                        sourceUrl = urlMatch[0];
+                        const res = await fetch('https://r.jina.ai/' + sourceUrl);
+                        if (res.ok) { targetText = (await res.text()).substring(0, 4000); }
+                    }
+                }
+
+                const prompt = `从以下文本提取岗位信息，返回单个JSON对象，结构为 {"company":"","companyType":"外资|合资|国企|民企|创业公司|未知","position":"","location":"","salary":"","requirements":[""],"tags":[""]}。文本：${targetText}`;
+
+                const response = await fetch(aiConfig.url, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${aiConfig.key}` }, 
+                    body: JSON.stringify({ model: aiConfig.model, messages: [{ role: "system", content: "只输出JSON" }, { role: "user", content: prompt }], temperature: 0.1 }) 
+                });
+
+                if (!response.ok) throw new Error("AI 请求失败");
+                const resultText = (await response.json()).choices[0].message.content.replace(/```json/g, '').replace(/```/g, '').trim();
+                const jobData = JSON.parse(resultText); 
+                jobData.id = 'manual_' + Date.now().toString(); jobData.url = sourceUrl;
+                
+                jobsData.unshift(jobData); 
+                document.getElementById('jdInput').value = ""; 
+                showToast("单条提炼成功！"); 
+                updateFilterOptions(); renderTable();
+            } catch (error) { 
+                showToast("单条解析失败", "error"); 
+            }
+        }
+
+        // ==========================================
+        // UI 渲染与管理逻辑
+        // ==========================================
+        function handleFilterChange() { currentFilters = { type: document.getElementById('filterType').value, location: document.getElementById('filterLocation').value, company: document.getElementById('filterCompany').value }; updateFilterOptions(); renderTable(); }
+        
+        function updateFilterOptions() {
+            let types = new Set(), locs = new Set(), comps = new Set();
+            jobsData.forEach(job => { types.add(job.companyType); if ((currentFilters.type === 'all' || job.companyType === currentFilters.type) && (currentFilters.company === 'all' || job.company === currentFilters.company)) locs.add(job.location); if ((currentFilters.type === 'all' || job.companyType === currentFilters.type) && (currentFilters.location === 'all' || job.location === currentFilters.location)) comps.add(job.company); });
+            const pop = (id, set, val, def) => { const el = document.getElementById(id); el.innerHTML = `<option value="all">${def}</option>`; Array.from(set).filter(Boolean).sort().forEach(i => { el.innerHTML += `<option value="${i}" ${i===val?'selected':''}>${i}</option>`; }); if(val!=='all' && !set.has(val)) { el.value='all'; currentFilters[id.replace('filter','').toLowerCase()]='all'; } };
+            pop('filterType', types, currentFilters.type, "全部性质"); pop('filterLocation', locs, currentFilters.location, "全部地点"); pop('filterCompany', comps, currentFilters.company, "全部公司");
+        }
+        
+        function renderTable() {
+            const tbody = document.getElementById('dataTableBody');
+            const filtered = jobsData.filter(j => (currentFilters.type === 'all' || j.companyType === currentFilters.type) && (currentFilters.location === 'all' || j.location === currentFilters.location) && (currentFilters.company === 'all' || j.company === currentFilters.company));
+            document.getElementById('jobCount').innerText = `${filtered.length} 个岗位`;
+            
+            if (filtered.length === 0) { 
+                tbody.innerHTML = '<tr><td colspan="5" class="px-6 py-20 text-center text-slate-400"><i data-lucide="bot" class="w-12 h-12 mx-auto mb-4 opacity-30"></i><p class="text-sm font-medium">空空如也。请在左侧点击“启动全网搜寻”获取数据。</p></td></tr>'; 
+                lucide.createIcons(); return; 
+            }
+            
+            tbody.innerHTML = filtered.map(j => {
+                let tc = "bg-slate-100 text-slate-700"; if((j.companyType||'').includes('外资')) tc = "bg-purple-100 text-purple-700"; else if((j.companyType||'').includes('合资')) tc = "bg-indigo-100 text-indigo-700"; else if((j.companyType||'').includes('国企')) tc = "bg-red-100 text-red-700"; else if((j.companyType||'').includes('民企')) tc = "bg-orange-100 text-orange-700";
+                
+                // 超级亮点：如果是自动抓取来的，自带原网址直达链接
+                const posHtml = (j.url && j.url !== "未注明")
+                    ? `<a href="${j.url}" target="_blank" class="text-blue-600 hover:text-blue-800 font-bold hover:underline inline-flex items-center group-hover:text-blue-700" title="点击直达官网原文">${escapeHTML(j.position)}<i data-lucide="external-link" class="w-3.5 h-3.5 ml-1 opacity-50"></i></a>` 
+                    : `<span class="font-bold text-slate-800">${escapeHTML(j.position)}</span>`;
+
+                return `<tr class="hover:bg-blue-50/40 transition-colors group">
+                    <td class="px-4 py-3.5 whitespace-nowrap"><div class="text-sm font-bold text-slate-900">${escapeHTML(j.company)}</div><div class="mt-1.5 inline-flex px-2 py-0.5 rounded text-[10px] font-bold tracking-wide ${tc}">${escapeHTML(j.companyType)}</div></td>
+                    <td class="px-4 py-3.5 whitespace-nowrap"><div class="text-sm">${posHtml}</div><div class="text-xs text-slate-500 mt-1.5 flex items-center font-medium"><i data-lucide="map-pin" class="w-3 h-3 mr-0.5 text-slate-400"></i>${escapeHTML(j.location)}</div></td>
+                    <td class="px-4 py-3.5 whitespace-nowrap"><div class="text-sm font-black text-emerald-600">${escapeHTML(j.salary)}</div><div class="flex flex-wrap mt-1.5 gap-1">${(j.tags||[]).filter(t=>t&&t!=='未注明').map(t=>`<span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold border border-slate-200 text-slate-600 bg-white shadow-sm">${t}</span>`).join('')}</div></td>
+                    <td class="px-4 py-3.5 text-sm text-slate-700"><ul class="space-y-1 font-medium">${(j.requirements||[]).filter(r=>r&&r!=='未注明').map(r=>`<li class="text-xs truncate flex items-start" title="${r}"><span class="text-blue-400 mr-1.5">•</span>${r}</li>`).join('')}</ul></td>
+                    <td class="px-4 py-3.5 whitespace-nowrap text-right"><button onclick="deleteRow('${j.id}')" class="text-red-400 hover:text-red-600 p-2 rounded-lg hover:bg-red-50 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"><i data-lucide="trash-2" class="w-4 h-4"></i></button></td>
+                </tr>`;
+            }).join(''); lucide.createIcons();
+        }
+
+        function deleteRow(id) { jobsData = jobsData.filter(job => job.id !== id); updateFilterOptions(); renderTable(); }
+        function clearTable() { if(confirm("确定要清空所有收集的岗位数据吗？")) { jobsData = []; updateFilterOptions(); renderTable(); } }
+        
+        function exportToCSV() {
+            if (jobsData.length === 0) return showToast("没有数据", "error");
+            const f = jobsData.filter(j => (currentFilters.type === 'all' || j.companyType === currentFilters.type) && (currentFilters.location === 'all' || j.location === currentFilters.location) && (currentFilters.company === 'all' || j.company === currentFilters.company));
+            let csv = "data:text/csv;charset=utf-8,\uFEFF" + ["公司名称", "公司性质", "岗位名称", "工作地点", "薪资范围", "核心要求", "福利标签", "原文直达链接"].join(",") + "\n";
+            f.forEach(j => { csv += [`"${j.company}"`, `"${j.companyType}"`, `"${j.position}"`, `"${j.location}"`, `"${j.salary}"`, `"${(j.requirements||[]).join('; ')}"`, `"${(j.tags||[]).join('; ')}"`, `"${j.url||''}"`].join(",") + "\n"; });
+            const a = document.createElement("a"); a.href = encodeURI(csv); a.download = `企招雷达全自动检索库_${new Date().toLocaleDateString()}.csv`; document.body.appendChild(a); a.click(); document.body.removeChild(a);
+        }
+
+        renderTable();
+    </script>
+</body>
+</html>
